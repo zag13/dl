@@ -1,4 +1,4 @@
-package main
+package cases
 
 import (
 	"fmt"
@@ -11,38 +11,59 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
+	"github.com/zag13/dl/internal/core"
 	"github.com/zag13/go-utils/ujson"
 )
 
 var (
-	destDomain = "go.dev"
-	destUrl    = "https://go.dev/blog/all"
-	htmlMeta   = "../../storage/html/go.dev/meta.json"
-	htmlDir    = "../../storage/html/go.dev/"
-	blogs      = make([]blog, 0)
-	oldBlogs   = make([]blog, 0)
+	curDir         = ""
+	goBlogDomain   = "go.dev"
+	goBlogUrl      = "https://go.dev/blog/all"
+	goBlogHtml     = "./storage/go.dev/html/"
+	goBlogHtmlMeta = "./storage/go.dev/html/meta.json"
+	goBlogPdf      = "./storage/go.dev/pdf/"
+	goBlogPdfName  = "./storage/go.dev/go.dev"
+	goBlogs        = make([]goBlog, 0)
+	goBlogsOld     = make([]goBlog, 0)
 )
 
-type blog struct {
+type goBlog struct {
 	Title   string
+	Url     string
 	Href    string
 	Date    string
 	Author  string
 	Summary string
 }
 
-func dlhtml() {
+func GoBlog(action string) {
+	for i := 0; i < 3; i++ {
+		if action[i]&1 == 1 {
+			switch i {
+			case 0:
+				fmt.Println("GoBlog: download html")
+				dlGoBlog()
+			case 1:
+				fmt.Println("GoBlog: convert html to pdf")
+				core.Html2pdf(goBlogHtml, goBlogPdf)
+			case 2:
+				fmt.Println("GoBlog: merged into a pdf with bookmarks")
+				core.MergePdf(goBlogPdf, goBlogPdfName)
+			}
+		}
+	}
+}
+
+func dlGoBlog() {
 	initResource()
+	updateMeta()
 
 	c := colly.NewCollector(
-		colly.AllowedDomains(destDomain),
+		colly.AllowedDomains(goBlogDomain),
 		colly.MaxDepth(1),
 	)
 
-	blogCollector := colly.NewCollector(
-		colly.AllowedDomains(destDomain),
-		colly.MaxDepth(1),
-	)
+	blogCollector := c.Clone()
 
 	c.OnHTML("link[rel='stylesheet']", func(e *colly.HTMLElement) {
 		rawURL := e.Request.AbsoluteURL(e.Attr("href"))
@@ -52,7 +73,7 @@ func dlhtml() {
 			return
 		}
 
-		fileName := htmlDir + "css/" + paths[len(paths)-1]
+		fileName := goBlogHtml + "css/" + paths[len(paths)-1]
 		if _, err := os.Stat(fileName); err == nil {
 			return
 		}
@@ -76,9 +97,10 @@ func dlhtml() {
 			}
 
 			rawURL := e.Request.AbsoluteURL(href)
+
 			u, _ := url.Parse(rawURL)
 			paths := strings.Split(u.Path, "/")
-			if searchBlog(paths[len(paths)-1], oldBlogs) != -1 {
+			if searchBlog(paths[len(paths)-1], goBlogsOld) != -1 {
 				return
 			}
 
@@ -116,8 +138,7 @@ func dlhtml() {
 		}
 
 		paths := strings.Split(u.Path, "/")
-		prefixInt := len(blogs) - searchBlog(paths[len(paths)-1], blogs) - 1
-		fileName := htmlDir + fmt.Sprintf("%03d_", prefixInt) + paths[len(paths)-1] + ".html"
+		fileName := goBlogHtml + getFilename(paths[len(paths)-1]) + ".html"
 		f, err := os.Create(fileName)
 		if err != nil {
 			log.Fatalf("File create error: %s", err)
@@ -140,8 +161,8 @@ func dlhtml() {
 			return
 		}
 
-		_ = os.MkdirAll(htmlDir+"assets/"+paths[len(paths)-2], 0755)
-		fileName := htmlDir + "assets/" + paths[len(paths)-2] + "/" + paths[len(paths)-1]
+		_ = os.MkdirAll(goBlogHtml+"assets/"+paths[len(paths)-2], 0755)
+		fileName := goBlogHtml + "assets/" + paths[len(paths)-2] + "/" + paths[len(paths)-1]
 		if _, err := os.Stat(fileName); err == nil {
 			return
 		}
@@ -161,24 +182,36 @@ func dlhtml() {
 		io.Copy(f, res.Body)
 	})
 
-	c.Visit(destUrl)
+	c.Visit(goBlogUrl)
 }
 
 func initResource() {
-	err := os.MkdirAll(htmlDir, 0755)
-	if err != nil {
+	wd, _ := os.Getwd()
+	wds := strings.Split(wd, "/")
+	if wds[len(wds)-1] == "dl" {
+		curDir = wd + "/"
+	} else {
+		curDir = strings.TrimSuffix(wd, "cmd")
+	}
+
+	goBlogHtml = curDir + goBlogHtml
+	goBlogHtmlMeta = curDir + goBlogHtmlMeta
+
+	if err := os.MkdirAll(goBlogHtml, 0755); err != nil {
 		log.Fatalf("Error creating directory: %s", err)
 	}
-	_ = os.MkdirAll(htmlDir+"css/", 0755)
-	_ = os.MkdirAll(htmlDir+"assets/", 0755)
+	os.MkdirAll(goBlogHtml+"css/", 0755)
+	os.MkdirAll(goBlogHtml+"assets/", 0755)
+}
 
-	err = ujson.JsonLoad(htmlMeta, &oldBlogs)
+func updateMeta() {
+	err := ujson.JsonLoad(goBlogHtmlMeta, &goBlogsOld)
 	if err != nil {
 		log.Printf("Error loading meta.json: %s", err)
 	}
 
 	c := colly.NewCollector(
-		colly.AllowedDomains(destDomain),
+		colly.AllowedDomains(goBlogDomain),
 		colly.MaxDepth(1),
 	)
 
@@ -189,8 +222,9 @@ func initResource() {
 				return
 			}
 			paths := strings.Split(u, "/")
-			blogs = append(blogs, blog{
+			goBlogs = append(goBlogs, goBlog{
 				Title:   e.DOM.Find("a").Text(),
+				Url:     e.Request.AbsoluteURL(u),
 				Href:    paths[len(paths)-1],
 				Date:    e.DOM.Find("span[class='date']").Text(),
 				Author:  e.DOM.Find("span[class='author']").Text(),
@@ -199,16 +233,27 @@ func initResource() {
 		})
 	})
 
-	c.Visit(destUrl)
+	c.Visit(goBlogUrl)
 
-	ujson.JsonDump(htmlMeta, blogs)
+	ujson.JsonDump(goBlogHtmlMeta, goBlogs)
 }
 
-func searchBlog(key string, data []blog) (n int) {
+func searchBlog(key string, data []goBlog) (n int) {
 	for i, datum := range data {
 		if datum.Href == key {
 			return i
 		}
 	}
 	return -1
+}
+
+func getFilename(key string) (s string) {
+	index := 0
+	for i, blog := range goBlogs {
+		if blog.Href == key {
+			index = i
+			break
+		}
+	}
+	return fmt.Sprintf("%03d_", len(goBlogs)-index) + key
 }
