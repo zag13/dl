@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
@@ -57,6 +58,8 @@ func Html2pdf(htmlDir string, pdfDir string) (err error) {
 			return err
 		}
 		log.Println("生成：", p.PdfPath)
+
+		time.Sleep(100 * time.Millisecond)
 	}
 	return
 }

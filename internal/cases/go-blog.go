@@ -55,7 +55,7 @@ func GoBlog(action string) {
 }
 
 func dlGoBlog() {
-	initResource()
+	initResource(goBlogHtml, goBlogHtmlMeta)
 	updateMeta()
 
 	c := colly.NewCollector(
@@ -183,25 +183,6 @@ func dlGoBlog() {
 	})
 
 	c.Visit(goBlogUrl)
-}
-
-func initResource() {
-	wd, _ := os.Getwd()
-	wds := strings.Split(wd, "/")
-	if wds[len(wds)-1] == "dl" {
-		curDir = wd + "/"
-	} else {
-		curDir = strings.TrimSuffix(wd, "cmd")
-	}
-
-	goBlogHtml = curDir + goBlogHtml
-	goBlogHtmlMeta = curDir + goBlogHtmlMeta
-
-	if err := os.MkdirAll(goBlogHtml, 0755); err != nil {
-		log.Fatalf("Error creating directory: %s", err)
-	}
-	os.MkdirAll(goBlogHtml+"css/", 0755)
-	os.MkdirAll(goBlogHtml+"assets/", 0755)
 }
 
 func updateMeta() {

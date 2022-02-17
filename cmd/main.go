@@ -25,6 +25,8 @@ func main() {
 	switch website {
 	case "go-blog":
 		cases.GoBlog(action)
+	case "ardanlabs":
+		cases.Ardanlabs(action)
 	default:
 		fmt.Println("no website")
 	}

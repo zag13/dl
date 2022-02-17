@@ -4,8 +4,8 @@ go 1.17
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.0
-	github.com/chromedp/cdproto v0.0.0-20211205231339-d2673e93eee4
-	github.com/chromedp/chromedp v0.7.6
+	github.com/chromedp/cdproto v0.0.0-20220216024739-dcb5af6199a1
+	github.com/chromedp/chromedp v0.7.7
 	github.com/gocolly/colly/v2 v2.1.0
 	github.com/pdfcpu/pdfcpu v0.3.13
 	github.com/zag13/go-utils v0.0.0-20211215034538-4b430ccb53d5
@@ -35,7 +35,7 @@ require (
 	github.com/temoto/robotstxt v1.1.1 // indirect
 	golang.org/x/image v0.0.0-20210607152325-775e3b0c77b9 // indirect
 	golang.org/x/net v0.0.0-20210916014120-12bc252f5db8 // indirect
-	golang.org/x/sys v0.0.0-20211124211545-fe61309f8881 // indirect
+	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
