@@ -27,6 +27,8 @@ func main() {
 		cases.GoBlog(action)
 	case "ardanlabs":
 		cases.Ardanlabs(action)
+	case "geekbang":
+		cases.Geekbang(action)
 	default:
 		fmt.Println("no website")
 	}
