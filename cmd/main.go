@@ -29,6 +29,8 @@ func main() {
 		cases.Ardanlabs(action)
 	case "geekbang":
 		cases.Geekbang(action)
+	case "localfiles":
+		cases.LocalFiles(action)
 	default:
 		fmt.Println("no website")
 	}
